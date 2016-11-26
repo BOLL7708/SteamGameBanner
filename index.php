@@ -1,3 +1,11 @@
+<?php
+
+function __autoload($class_name)
+{
+	include_once 'inc/class.' . $class_name . '.inc.php';
+}
+
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -8,17 +16,18 @@
 				margin: 0; 
 				padding: 0;
 			}
-			#image {
-				width: 100%;
-				height: 100%;
+			#banner {
+				width: 100vw;
+				height: 100vh;
+				
 				background-size: cover;
 				background-repeat: no-repeat;
 				background-position: center;
-			 	white-space: nowrap;
+
 				overflow: hidden;
 				text-overflow: ellipsis;
 			}
-			#label {
+			#status {
 				margin: 10px;
 				font-size: 200%;
 				font-family: sans-serif;
@@ -27,38 +36,43 @@
 		</style>
 	</head>
 	<body>
-		<div id="image"><span id="label">No game detected yet...</span></div>
+		<div id="banner"><span id="status">No game detected yet...</span></div>
 		<script type="text/javascript">
+			var gameId;
+			var $banner = $('#banner:first');
+			var $status = $('#status:first');
 
-		var userId = ''; // http://steamidfinder.com/ Load profile, then click "Generate forum signature" and copy the "steamid" from the url.
-		var gameId;
-		var $image = $('#image:first');
-		var $label = $('#label:first');
+			update();
+			setInterval(update, '<?=Config::get("intervalMs", 30000)?>');
 
-		update();
-		setInterval(update, 10000);
+			function update() 
+			{
+				$.ajax({
+					url: 'data.php'+(typeof gameId !== 'undefined' ? '?previd='+gameId : ''),
+					success: success,
+					error: error
+				});
+			}
 
-		function update() 
-		{
-			$.ajax({
-				url: 'data.php?id='+userId+(typeof gameId !== 'undefined' ? '&previd='+gameId : ''),
-				success: success,
-				error: error
-			});
-		}
+			function success(data, status, xhr) {
+				if(typeof data.error !== 'undefined') { // Error message
+					$status.html(data.error);
+					$banner.css('background-image', '');
+					return;
+				} 
+				if(typeof data.message !== 'undefined') { // No need to update
+					if(<?=Config::get("debug", false)?>) console.log(data.message);
+					return; 
+				}
 
-		function success(data, status, xhr) {
-			if(xhr.status != 200) return; // Failure to load data somewhere or it was a repeated request.
-			if(typeof data.id !== 'undefined' && data.id === gameId) return; // Player is not in a game or it's the same game as shown.
-			$image.css('background-image', "url('"+data.header_image+"')");
-			$label.html(''); /* data.name */
-			gameId = data.id;
-		}
+				$banner.css('background-image', "url('"+data.header_image+"')");
+				$status.html('');
+				gameId = data.id;
+			}
 
-		function error(xhr, status, error) {
-			console.log(error);
-		}
-
+			function error(xhr, status, error) {
+				console.log(error);
+			}
 		</script>
 	</body>
 </html>

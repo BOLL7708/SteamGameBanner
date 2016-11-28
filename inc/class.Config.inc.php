@@ -22,6 +22,12 @@ class Config
 	{
 		if(self::$instance == null) self::$instance = new Config();
 		$out = self::$instance->settings[$key] ?? $default;
+		return $out;
+	}
+
+	public static function print($key, $default=null)
+	{
+		$out = self::get($key, $default);
 		if(is_bool($out)) $out = $out ? 'true' : 'false';
 		return $out;
 	}

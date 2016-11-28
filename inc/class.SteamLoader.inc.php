@@ -2,11 +2,12 @@
 
 class SteamLoader 
 {
-	public function getGameInfo($apiKey, $userId)
+	public function getGameInfo($apiKey, $userId, $debug=false)
 	{
+		// print_r([$apiKey, $userId, $debug]);
 		$fields 	= $this->getFields();
 		$prevId 	= $this->getPreviousGameId();
-		$game 		= $this->doRequest($apiKey, $userId, $fields, $prevId);
+		$game 		= $this->doRequest($apiKey, $userId, $fields, $prevId, $debug);
 		return $game;
 	}
 
@@ -23,7 +24,7 @@ class SteamLoader
 		return $_GET['previd'] ?? false;
 	}
 
-	private function doRequest($apiKey, $userId, $fields, $prevId)
+	private function doRequest($apiKey, $userId, $fields, $prevId, $debug)
 	{
 		// Init
 		$ch = curl_init();
@@ -42,7 +43,7 @@ class SteamLoader
 		// Game ID
 		$gameId 	= $user->gameid ?? false; // '494830';
 		if(!$gameId) 
-			$this->output('User is not playing a game right now.', false); // number for debug, else false
+			$this->output('User is not playing a game right now.', false, ($debug ? $user : null)); // number for debug, else false
 		if($prevId && $prevId === $gameId)
 			$this->output('Not a new game, skipping.', false);
 
@@ -51,7 +52,14 @@ class SteamLoader
 		if(!$game) 
 			$this->output('Played game not found.', true);
 		$game 		= json_decode($game);
-			
+		
+		// Debug
+		if($debug) {
+			$gameOut = $game->$gameId->data;
+			$gameOut->id = $gameId;
+			return $gameOut;
+		}
+
 		// Output
 		$gameOut 	= new StdClass();
 		$gameOut->id = $gameId;
@@ -76,10 +84,11 @@ class SteamLoader
 		return curl_exec($ch);
 	}
 
-	private function output($message, $isError=false)
+	private function output($message, $isError=false, $data=null)
 	{
 		header('Content-Type: application/json');
 		$output = [($isError ? 'error' : 'message') => $message];
+		if($data !== null) $output['data'] = $data;
 		echo json_encode($output);
 		exit;
 	}

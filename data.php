@@ -6,7 +6,11 @@ function __autoload($class_name)
 }
 
 $sl = new SteamLoader();
-$game = $sl->getGameInfo(Config::get('apiKey'), Config::get('userId'));
+$game = $sl->getGameInfo(
+	Config::get('apiKey'), 
+	Config::get('userId'), 
+	Config::get('debug', false)
+);
 
 header('Content-Type: application/json');
 echo json_encode($game);

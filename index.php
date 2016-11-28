@@ -19,13 +19,14 @@ function __autoload($class_name)
 			#banner {
 				width: 100vw;
 				height: 100vh;
-				
-				background-size: cover;
-				background-repeat: no-repeat;
-				background-position: center;
 
 				overflow: hidden;
 				text-overflow: ellipsis;
+			}
+			body, #banner {
+				background-size: cover;
+				background-repeat: no-repeat;
+				background-position: center;
 			}
 			#status {
 				margin: 10px;
@@ -42,8 +43,16 @@ function __autoload($class_name)
 			var $banner = $('#banner:first');
 			var $status = $('#status:first');
 
+			// Put placeholder banner in the background.
+			var placeholder = '<?=Config::print("placeholder", "")?>';
+			if(placeholder !== '') {
+				$('body:first').css('background-image', 'url(res/'+placeholder+')');
+				$status.html('');
+			}
+
+			// Run update
 			update();
-			setInterval(update, '<?=Config::get("intervalMs", 30000)?>');
+			setInterval(update, '<?=Config::print("intervalMs", 30000)?>');
 
 			function update() 
 			{

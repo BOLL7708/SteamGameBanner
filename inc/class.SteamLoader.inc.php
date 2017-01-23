@@ -2,20 +2,24 @@
 
 class SteamLoader 
 {
-	public function getGameInfo($apiKey, $userId, $debug=false)
+	const STATUS_USER_LOAD_FAILED = 0;
+	const STATUS_USER_RESULT_EMPTY = 1;
+	const STATUS_GAME_NOT_DEFINED = 2;
+	const STATUS_GAME_IS_PREVIOUS = 3;
+	const STATUS_GAME_NOT_FOUND = 4;
+	const STATUS_GAME_IS_NEW = 5;
+
+	public function getGameData($apiKey, $userId, $debug=false)
 	{
-		// print_r([$apiKey, $userId, $debug]);
 		$fields 	= $this->getFields();
 		$prevId 	= $this->getPreviousGameId();
-		$game 		= $this->doRequest($apiKey, $userId, $fields, $prevId, $debug);
-		return $game;
+		return $this->doRequest($apiKey, $userId, $fields, $prevId, $debug);
 	}
 
 	private function getFields()
 	{
 		$fields		= array_filter(explode(',', $_GET['fields'] ?? 'name,header_image'));
-		if(!(is_array($fields) && count($fields) > 0)) 
-			$this->output('Missing game fields.', true);
+		if(!(is_array($fields) && count($fields) > 0)) $this->output('Missing game fields.', true);
 		return $fields;
 	}
 
@@ -32,32 +36,29 @@ class SteamLoader
 
 		// User
 		$users 		= $this->getUser($apiKey, $userId, $ch);
-		if(!$users) 
-			$this->output('Loading user failed.', true);
+		if(!$users) return $this->output('Loading user failed.', self::STATUS_USER_LOAD_FAILED);
 		$users 		= json_decode($users);
 		$userArr 	= $users->response->players ?? [];
 		$user 		= array_pop($userArr);
-		if(!$user) 
-			$this->output('User not found or API returned nothing.', true);
+		if(!$user) return $this->output('User not found or API returned nothing.', self::STATUS_USER_RESULT_EMPTY);
 
 		// Game ID
-		$gameId 	= $user->gameid ?? false; // '494830';
-		if(!$gameId) 
-			$this->output('User is not playing a game right now.', false, ($debug ? $user : null)); // number for debug, else false
-		if($prevId && $prevId === $gameId)
-			$this->output('Not a new game, skipping.', false);
+		$gameId 	= $user->gameid ?? false;
+		if(!$gameId) return $this->output('User is not playing a game right now.', self::STATUS_GAME_NOT_DEFINED, null);
+		if($prevId && $prevId === $gameId) return $this->output('Not a new game, skipping.', self::STATUS_GAME_IS_PREVIOUS, $gameId);
 
 		// Game
 		$game 		= $this->getGame($gameId, $ch);
-		if(!$game) 
-			$this->output('Played game not found.', true);
+		if(!$game) return $this->output('Played game not found.', self::STATUS_GAME_NOT_FOUND);
 		$game 		= json_decode($game);
 		
+		curl_close($ch);
+
 		// Debug
 		if($debug) {
 			$gameOut = $game->$gameId->data;
 			$gameOut->id = $gameId;
-			return $gameOut;
+			return $this->output('Debug output.', self::STATUS_GAME_IS_NEW, $gameOut);
 		}
 
 		// Output
@@ -66,8 +67,7 @@ class SteamLoader
 		foreach($fields as $field) {
 			$gameOut->$field = $game->$gameId->data->$field ?? null;
 		}
-		curl_close($ch);
-		return $gameOut;
+		return $this->output('New game found.', self::STATUS_GAME_IS_NEW, $gameOut);
 	}
 
 	private function getUser($key, $steamId, $ch) 
@@ -84,13 +84,11 @@ class SteamLoader
 		return curl_exec($ch);
 	}
 
-	private function output($message, $isError=false, $data=null)
+	private function output($message, $status=self::STATUS_GAME_IS_NEW, $data=null)
 	{
-		header('Content-Type: application/json');
-		$output = [($isError ? 'error' : 'message') => $message];
-		if($data !== null) $output['data'] = $data;
-		echo json_encode($output);
-		exit;
+		$output = ['message' => $message, 'status' => $status];
+		if($data !== null) $output['game'] = $data;
+		return $output;
 	}
 }
 

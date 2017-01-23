@@ -64,19 +64,36 @@ function __autoload($class_name)
 			}
 
 			function success(data, status, xhr) {
-				if(typeof data.error !== 'undefined') { // Error message
-					$status.html(data.error);
-					$banner.css('background-image', '');
-					return;
-				} 
-				if(typeof data.message !== 'undefined') { // No need to update
-					if(<?=Config::get("debug", false)?>) console.log(data.message);
-					return; 
+				switch(data.status) {
+					case <?=SteamLoader::STATUS_USER_LOAD_FAILED?>:
+						clearBanner(data.message);
+						break;
+					case <?=SteamLoader::STATUS_USER_RESULT_EMPTY?>:
+						clearBanner(data.message);
+						break;
+					case <?=SteamLoader::STATUS_GAME_NOT_DEFINED?>:
+						// This means we are not playing, if not clearing we leave previous game up.
+						if(<?=Config::get("clearAtNoGame", true) ? 'true' : 'false'?>) clearBanner("");
+						gameId = undefined;
+						break;
+					case <?=SteamLoader::STATUS_GAME_IS_PREVIOUS?>:
+						// Do nothing
+						break;
+					case <?=SteamLoader::STATUS_GAME_NOT_FOUND?>:
+						clearBanner(data.message);
+						break;
+					case <?=SteamLoader::STATUS_GAME_IS_NEW?>:
+						$banner.css('background-image', "url('"+data.game.header_image+"')");
+						$status.html('');
+						gameId = data.game.id;
+						break;
 				}
+				if(<?=Config::get("debug", false) ? 'true' : 'false'?>) console.log(data.message);
 
-				$banner.css('background-image', "url('"+data.header_image+"')");
-				$status.html('');
-				gameId = data.id;
+				function clearBanner(message) {
+					$status.html(message);
+					$banner.css('background-image', '');
+				}
 			}
 
 			function error(xhr, status, error) {

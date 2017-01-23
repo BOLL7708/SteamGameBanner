@@ -7,7 +7,7 @@ class Config
 
 	protected function __construct() 
 	{
-		// Loads local config if present, this to avoid pushing private data
+		// Loads local config if present, this to avoid committing private data
 		$files = ['config.local.php', 'config.php']; 
 		foreach($files as $path)
 		{

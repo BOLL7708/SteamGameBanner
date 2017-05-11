@@ -1,5 +1,4 @@
 <?php 
-
 class SteamLoader 
 {
 	const STATUS_USER_LOAD_FAILED = 0;
@@ -11,14 +10,14 @@ class SteamLoader
 
 	public function getGameData($apiKey, $userId, $debug=false)
 	{
-		$fields 	= $this->getFields();
-		$prevId 	= $this->getPreviousGameId();
+		$fields	= $this->getFields();
+		$prevId	= $this->getPreviousGameId();
 		return $this->doRequest($apiKey, $userId, $fields, $prevId, $debug);
 	}
 
 	private function getFields()
 	{
-		$fields		= array_filter(explode(',', $_GET['fields'] ?? 'name,header_image'));
+		$fields	= array_filter(explode(',', $_GET['fields'] ?? 'name,header_image'));
 		if(!(is_array($fields) && count($fields) > 0)) $this->output('Missing game fields.', true);
 		return $fields;
 	}
@@ -62,8 +61,8 @@ class SteamLoader
 		}
 
 		// Output
-		$gameOut 	= new StdClass();
-		$gameOut->id = $gameId;
+		$gameOut 		= new StdClass();
+		$gameOut->id 	= $gameId;
 		foreach($fields as $field) {
 			$gameOut->$field = $game->$gameId->data->$field ?? null;
 		}
@@ -91,5 +90,4 @@ class SteamLoader
 		return $output;
 	}
 }
-
 ?>

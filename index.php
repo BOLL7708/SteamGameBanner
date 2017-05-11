@@ -1,40 +1,14 @@
 <?php
-
 function __autoload($class_name)
 {
 	include_once 'inc/class.' . $class_name . '.inc.php';
 }
-
 ?>
 <!DOCTYPE html>
 <html>
 	<head>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-		<style>
-			body {
-				background-color: black; 
-				margin: 0; 
-				padding: 0;
-			}
-			#banner {
-				width: 100vw;
-				height: 100vh;
-
-				overflow: hidden;
-				text-overflow: ellipsis;
-			}
-			body, #banner {
-				background-size: cover;
-				background-repeat: no-repeat;
-				background-position: center;
-			}
-			#status {
-				margin: 10px;
-				font-size: 200%;
-				font-family: sans-serif;
-			 	color: white;					
-			}
-		</style>
+		<link rel="stylesheet" type="text/css" href="styles.css">
 	</head>
 	<body>
 		<div id="banner"><span id="status">No game detected yet...</span></div>

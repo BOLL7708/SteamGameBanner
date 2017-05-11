@@ -1,5 +1,4 @@
 <?php
-
 class Config
 {
 	private static $instance;
@@ -32,5 +31,4 @@ class Config
 		return $out;
 	}
 }
-
 ?>
